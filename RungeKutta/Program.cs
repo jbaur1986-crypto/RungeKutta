@@ -4,6 +4,7 @@ delegate double Derivative(double t, double[] y);
 
 class ButcherTableau
 {
+    // _a sxs matrix, _b and _c length s
     private readonly double[,] _a;
     private readonly double[] _b;
     private readonly double[] _c;
@@ -22,29 +23,27 @@ class ButcherTableau
 
     private void Validate()
     {
-        //missing
+        if (_b.Length != _c.Length) throw new ArgumentException("Dimensions of b and c have to be equal.");
+        if (_a.GetLength(0) != _a.GetLength(1) || _a.GetLength(0) != _b.Length)
+            throw new ArgumentException("Dimensions of a are wrong.");
+        // check for explicit runge kutta
+        for (int i = 0; i < _a.GetLength(0)-1; i++)
+        {
+            for (int j = i; j < _a.GetLength(1); j++)
+            {
+                if (_a[i, j] != 0) throw new ArgumentException("Entries of a in right upper triangle have to be zero.");
+            }
+        }
     }
+    
+    // private void CheckColumnSum()
     
 }
 static class RungeKutta
 {
-    static bool CheckExplizitRungeKuttaStructure(double[] b, double[] c, double[,] a)
+    static double SolveExplicitRungeKutta(ButcherTableau b, Derivative f, double[] y, double t0, double tmax, int n)
     {
-        if (b.Length != c.Length)
-            return false;
-        for (int i = 0; i < c.GetLength(0)-1; i++)
-        {
-            for (int j = 0; j < c.GetLength(1) - 1; j++)
-            {
-                if (a[i, j] != 0) return false;
-            }
-        } 
-        return true;
-    }
-
-    static double ComputeRungeKutta(double[] b, double[] c, double[,] a, Derivative f, double[] y, double t0, double tmax, int n)
-    {
-        
+        //implement here
     }
 }
 class Program
