@@ -2,6 +2,11 @@
 
 delegate double[] Derivative(double t, double[] y);
 
+class VectorHelper
+{
+    // Refactor put in all Helpers
+}
+
 class ButcherTableau
 {
     // _a sxs matrix, _b and _c length s
@@ -37,14 +42,16 @@ class ButcherTableau
     }
     // private void CheckColumnSum()
 }
+
 static class RungeKutta
 {
-    public static double[] SolveExplicitRungeKutta(ButcherTableau b, Derivative f, double[] y0, double t0, double tmax, int n, double tol)
+    public static double[] SolveExplicitRungeKutta(ButcherTableau b, Derivative f, double[] y0, double t0, double tmax,
+        int n, double tol)
     {
         double h = (tmax - t0) / n;
         int s = b.B.Length;
         int dim = y0.Length;
-        
+
         double[] yN = (double[])y0.Clone();
         double tN = t0;
         double[] yNext = new double[dim];
@@ -71,6 +78,7 @@ static class RungeKutta
             {
                 res[i] = alpha * vec[i];
             }
+
             return res;
         }
 
@@ -81,23 +89,25 @@ static class RungeKutta
             {
                 res[i] = first[i] + second[i];
             }
+
             return res;
         }
-        
+
         double TimeTemp(int i)
         {
-           return tN + h * b.C[i];
+            return tN + h * b.C[i];
         }
 
         double[] YTemp(int i)
         {
             double[] ySnake = new double[dim];
-            
-            for (int j = 0; j < i ; j++)
+
+            for (int j = 0; j < i; j++)
             {
                 double[] yAdd = Scale(GetKiVector(j), b.A[i, j]);
                 ySnake = Add(ySnake, yAdd);
             }
+
             ySnake = Scale(ySnake, h);
             return Add(yN, ySnake);
         }
@@ -105,7 +115,7 @@ static class RungeKutta
         for (int k = 0; k < n; k++)
         {
             double[] phi = new double[dim];
-            
+
             for (int i = 0; i < s; i++)
             {
                 kHelp = f(TimeTemp(i), YTemp(i));
@@ -128,30 +138,75 @@ static class RungeKutta
             yN = yNext;
 
         }
+
         return yN;
     }
-}
-class Program
-{
-    static void Main(string[] args)
+
+    public static double ExperimentalConvergenceOrder(ButcherTableau b, Derivative f, double[] y0, double t0,
+        double tEnd, int n)
     {
-        double[,] a = new double[,] 
+        double[] y1 = SolveExplicitRungeKutta(b, f, y0, t0, tEnd, n, -9.999);
+
+        double[] y2 = SolveExplicitRungeKutta(b, f, y0, t0, tEnd, 2 * n, -9.999);
+
+        double[] y3 = SolveExplicitRungeKutta(b, f, y0, t0, tEnd, 4 * n, -9.999);
+
+        double value;
+
+        double Norm(double[] y)
         {
-            { 0, 0, 0 },
-            { 1.0/3, 0, 0},
-            { 0, 2.0/3, 0 }
-        };
-        double[] be = new double[] { 1.0 / 4, 0, 3.0 / 4 };
-        double[] c = new double[] { 0, 1.0 / 3, 2.0 / 3 };
-        ButcherTableau b = new ButcherTableau(a, be, c, 0.1);
-        Derivative f = (t,y) => new double[] { Math.Sin(t) + 4 - Math.Pow(y[0],2) };
-        double[] y0 = new double[] { 2 };
-        double t0 = 0;
-        double tmax = 0.4;
-        int n = 1;
-        double tol = -999;
-        double[] solution = RungeKutta.SolveExplicitRungeKutta(b, f, y0, t0, tmax, n, tol);
-        Console.WriteLine(string.Join(",",solution));
-        
+            double n = 0;
+            for (int i = 0; i < y.Length; i++)
+            {
+                n += Math.Pow(y[i], 2);
+            }
+
+            n = Math.Sqrt(n);
+            return n;
+        }
+
+        double[] Subtract(double[] first, double[] second)
+        {
+            if (first.Length != second.Length)
+                throw new ArgumentOutOfRangeException("Both arrays must match in dimension.");
+
+            double[] res = new double[first.Length];
+
+            for (int i = 0; i < first.Length; i++)
+            {
+                res[i] = first[i] - second[i];
+            }
+
+            return res;
+        }
+
+        value = Math.Log2(Norm(Subtract(y1, y2)) / Norm(Subtract(y2, y3)));
+        return value;
+    }
+
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            double[,] a = new double[,]
+            {
+                { 0, 0, 0 },
+                { 1.0 / 3, 0, 0 },
+                { 0, 2.0 / 3, 0 }
+            };
+            double[] be = new double[] { 1.0 / 4, 0, 3.0 / 4 };
+            double[] c = new double[] { 0, 1.0 / 3, 2.0 / 3 };
+            ButcherTableau b = new ButcherTableau(a, be, c, 0.1);
+            Derivative f = (t, y) => new double[] { Math.Sin(t) + 4 - Math.Pow(y[0], 2) };
+            double[] y0 = new double[] { 2 };
+            double t0 = 0;
+            double tmax = 0.4;
+            int n = 1;
+            double tol = -999;
+            double[] solution = RungeKutta.SolveExplicitRungeKutta(b, f, y0, t0, tmax, n, tol);
+            Console.WriteLine(string.Join(",", solution));
+            double p = ExperimentalConvergenceOrder(b, f, y0, t0, tmax, 30);
+            Console.WriteLine(p);
+        }
     }
 }
