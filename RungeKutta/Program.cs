@@ -4,7 +4,7 @@ delegate double[] Derivative(double t, double[] y);
 
 class VectorHelper
 {
-    // Refactor put in all Helpers
+    // Refactor put in all Helpers.
 }
 
 class ButcherTableau
